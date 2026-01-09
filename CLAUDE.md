@@ -210,4 +210,10 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
 
 ## Recent Changes
-- 001-console-todo-app: Added [if applicable, e.g., PostgreSQL, CoreData, files or N/A]
+- 003-frontend-auth-dashboard: Added TypeScript (Next.js 16+, React 18+) + Next.js 16+, Better Auth, Tailwind CSS, React, React Query (or SWR)
+- 002-phase-2-backend: Added Python 3.13+ (as per constitution) + FastAPI 0.115+, SQLModel 0.0.18+, python-jose 3.3.0+, psycopg2-binary 2.9.9+, Alembic 1.13.0+
+- 001-backend-crud-api: Added Python 3.13+ + FastAPI, SQLModel, PostgreSQL, Pydantic, Alembic, python-jose (JWT), uvicorn
+
+## Active Technologies
+- TypeScript (Next.js 16+, React 18+) + Next.js 16+, Better Auth, Tailwind CSS, React, React Query (or SWR) (003-frontend-auth-dashboard)
+- Neon Serverless PostgreSQL (backend-managed) (003-frontend-auth-dashboard)
