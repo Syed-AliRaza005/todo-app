@@ -5,6 +5,7 @@ description = "FastAPI backend for task management with JWT authentication"
 authors = [
     {name = "Todo App Team"}
 ]
+requires-python = ">=3.13"
 
 dependencies = [
     "fastapi>=0.115.0",
