@@ -33,12 +33,14 @@ if environment == "development":
     origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-      
-      "  https://todo-app-production-8bf0.up.railway.app/",  # Added for Better Auth
-     
+        "https://todo-app-production-8bf0.up.railway.app",  # Backend URL
+        "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app"  # Frontend URL
     ]
 else:
-    origins = [os.getenv("FRONTEND_URL", "https://todo-app-production-8bf0.up.railway.app/")]
+    origins = [
+        os.getenv("FRONTEND_URL", "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app"),
+        "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app"  # Fallback to frontend URL
+    ]
 
 app.add_middleware(
     CORSMiddleware,

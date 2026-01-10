@@ -14,7 +14,11 @@
       "Bash(vercel --prod --yes)",
       "mcp__vercel__list_teams",
       "mcp__vercel__list_projects",
-      "Bash(git add .)"
+      "Bash(git add .)",
+      "Bash(git commit -m \"Deploy frontend updates to Vercel\")",
+      "Bash(git push origin 003-frontend-auth-dashboard)",
+      "Bash(npx vercel --prod --yes)",
+      "mcp__vercel__get_project"
     ]
   }
 }
