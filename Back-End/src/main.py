@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from .api.auth import router as auth_router
 from .api.tasks import router as tasks_router
 from .database import engine, create_db_and_tables
+from .hf_inference import router as hf_router
 
 
 @asynccontextmanager
@@ -26,14 +27,14 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
 # Configure CORS properly
 # Default to development settings if ENVIRONMENT is not set or is "development"
-environment = os.getenv("ENVIRONMENT", "development")
-if environment == "development":
+environment = os.getenv("ENVIRONMENT", "[production]")
+if environment == "production":
     origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "https://todo-app-production-8bf0.up.railway.app",  # Backend URL
         "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app",  # Old Frontend URL
         "https://front-wheat-sigma-99.vercel.app/"  # Current Frontend URL
     ]
@@ -41,20 +42,24 @@ else:
     origins = [
         os.getenv("FRONTEND_URL", "https://front-wheat-sigma-99.vercel.app/"),
         "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app",  # Old Frontend URL fallback
-        "https://front-wheat-sigma-99.vercel.app/"  # Current Frontend URL
+        "https://front-wheat-sigma-99.vercel.app/",# Current Frontend URL
+        "http://localhost:3000"
     ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    # allow_origins=origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["*"],
+    allow_origins=["*"],  # Is se har jagah se connection allow ho jayega
+ 
 )
 
 # Include routers
 app.include_router(auth_router)
 app.include_router(tasks_router)
+app.include_router(hf_router)
 
 
 @app.get("/")
