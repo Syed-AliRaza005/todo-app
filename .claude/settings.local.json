@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git sparse-checkout disable)"
+      "Bash(git sparse-checkout disable)",
+      "Bash(uv lock)",
+      "Bash(uv sync --no-dev --no-install-project)",
+      "Bash(git add Back-End/uv.lock)",
+      "Bash(npm run build)",
+      "Bash(xargs cat)",
+      "mcp__vercel__deploy_to_vercel",
+      "Bash(vercel --cwd ./ --yes --force)",
+      "Bash(npm install -g vercel)",
+      "Bash(vercel --cwd . --prod)",
+      "Bash(vercel --prod --yes)",
+      "mcp__vercel__list_teams",
+      "mcp__vercel__list_projects",
+      "Bash(git add .)"
     ]
   }
 }

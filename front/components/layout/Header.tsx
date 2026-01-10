@@ -10,7 +10,7 @@ export default function Header() {
 
   const handleSignOut = async () => {
     await signOut();
-    router.push('/(auth)/signin');
+    router.push('/signin');
   };
 
   return (

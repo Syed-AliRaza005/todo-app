@@ -33,15 +33,12 @@ if environment == "development":
     origins = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-        "http://localhost:8080",  # Added for Better Auth
-        "http://127.0.0.1:8080", # Added for Better Auth
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
+      
+      "  https://todo-app-production-8bf0.up.railway.app/",  # Added for Better Auth
+     
     ]
 else:
-    origins = [os.getenv("FRONTEND_URL", "https://yourdomain.com")]
+    origins = [os.getenv("FRONTEND_URL", "https://todo-app-production-8bf0.up.railway.app/")]
 
 app.add_middleware(
     CORSMiddleware,

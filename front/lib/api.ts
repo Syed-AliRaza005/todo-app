@@ -35,7 +35,7 @@ export interface UpdateTaskRequest {
 }
 
 // Use real API unless explicitly set to use mock API
-const USE_MOCK_API = process.env.USE_MOCK_API === 'true';
+const USE_MOCK_API = process.env.USE_MOCK_API === 'false';
 
 // API functions for tasks
 export const taskApi = {
