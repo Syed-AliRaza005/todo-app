@@ -18,7 +18,11 @@
       "Bash(git commit -m \"Deploy frontend updates to Vercel\")",
       "Bash(git push origin 003-frontend-auth-dashboard)",
       "Bash(npx vercel --prod --yes)",
-      "mcp__vercel__get_project"
+      "mcp__vercel__get_project",
+      "Bash(git commit -m \"Update CORS configuration to allow frontend domain and fix API URLs\")",
+      "mcp__railway__check-railway-status",
+      "Bash(dir G:Todo-app)",
+      "Bash(python -c \"\nimport toml\nwith open\\(''pyproject.toml'', ''r''\\) as f:\n    data = toml.load\\(f\\)\ndeps = data[''project''][''dependencies'']\nwith open\\(''requirements.txt'', ''w''\\) as f:\n    for dep in deps:\n        f.write\\(dep + ''\\\\n''\\)\n\")"
     ]
   }
 }

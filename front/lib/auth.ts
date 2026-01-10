@@ -43,37 +43,9 @@ export async function authenticateUser(email: string, password: string) {
 
       // Get user info separately since the login response might not include full user details
       try {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-        if (!API_BASE_URL) {
-          throw new Error('API base URL is not configured');
-        }
-
-        // Validate the API base URL to prevent SSRF attacks
-        if (!API_BASE_URL.startsWith('https://') && !API_BASE_URL.startsWith('http://')) {
-          throw new Error('Invalid API base URL');
-        }
-
-        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${authResult.access_token}`,
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (userResponse.ok) {
-          const userInfo = await userResponse.json();
-          localStorage.setItem('user_data', JSON.stringify(userInfo));
-          return userInfo;
-        } else {
-          // If getting user info fails, use the user ID from the auth result
-          const basicUserInfo = {
-            id: authResult.user_id,
-            email,
-            name: email.split('@')[0] // Just for demo
-          };
-          localStorage.setItem('user_data', JSON.stringify(basicUserInfo));
-          return basicUserInfo;
-        }
+        const userInfo = await authApi.getUserInfo();
+        localStorage.setItem('user_data', JSON.stringify(userInfo));
+        return userInfo;
       } catch (userInfoError) {
         // Fallback to basic user info if fetching user info fails
         const basicUserInfo = {
@@ -105,37 +77,9 @@ export async function registerUser(email: string, password: string, name: string
 
       // Get user info separately since the signup response might not include full user details
       try {
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-        if (!API_BASE_URL) {
-          throw new Error('API base URL is not configured');
-        }
-
-        // Validate the API base URL to prevent SSRF attacks
-        if (!API_BASE_URL.startsWith('https://') && !API_BASE_URL.startsWith('http://')) {
-          throw new Error('Invalid API base URL');
-        }
-
-        const userResponse = await fetch(`${API_BASE_URL}/auth/me`, {
-          headers: {
-            'Authorization': `Bearer ${authResult.access_token}`,
-            'Content-Type': 'application/json',
-          }
-        });
-
-        if (userResponse.ok) {
-          const userInfo = await userResponse.json();
-          localStorage.setItem('user_data', JSON.stringify(userInfo));
-          return userInfo;
-        } else {
-          // If getting user info fails, use the user ID from the auth result
-          const basicUserInfo = {
-            id: authResult.user_id,
-            email,
-            name
-          };
-          localStorage.setItem('user_data', JSON.stringify(basicUserInfo));
-          return basicUserInfo;
-        }
+        const userInfo = await authApi.getUserInfo();
+        localStorage.setItem('user_data', JSON.stringify(userInfo));
+        return userInfo;
       } catch (userInfoError) {
         // Fallback to basic user info if fetching user info fails
         const basicUserInfo = {
@@ -158,7 +102,10 @@ export async function registerUser(email: string, password: string, name: string
 // Sign out function
 export async function deauthenticateUser() {
   try {
-    // Remove from localStorage (in a real app, this would be handled by Better Auth)
+    // Call the backend API for logout (to invalidate the token server-side)
+    await authApi.signOut();
+
+    // Remove from localStorage
     if (typeof window !== 'undefined') {
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_data');

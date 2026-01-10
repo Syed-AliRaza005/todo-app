@@ -34,12 +34,14 @@ if environment == "development":
         "http://localhost:3000",
         "http://127.0.0.1:3000",
         "https://todo-app-production-8bf0.up.railway.app",  # Backend URL
-        "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app"  # Frontend URL
+        "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app",  # Old Frontend URL
+        "https://front-wheat-sigma-99.vercel.app/"  # Current Frontend URL
     ]
 else:
     origins = [
-        os.getenv("FRONTEND_URL", "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app"),
-        "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app"  # Fallback to frontend URL
+        os.getenv("FRONTEND_URL", "https://front-wheat-sigma-99.vercel.app/"),
+        "https://front-6sdg16hl8-syed-ali-razas-projects.vercel.app",  # Old Frontend URL fallback
+        "https://front-wheat-sigma-99.vercel.app/"  # Current Frontend URL
     ]
 
 app.add_middleware(

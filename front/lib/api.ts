@@ -34,8 +34,8 @@ export interface UpdateTaskRequest {
   status?: 'Pending' | 'Completed';
 }
 
-// Use real API unless explicitly set to use mock API
-const USE_MOCK_API = process.env.USE_MOCK_API === 'false';
+// Use mock API if explicitly set to 'true', otherwise use real API
+const USE_MOCK_API = process.env.USE_MOCK_API === 'true';
 
 // API functions for tasks
 export const taskApi = {
