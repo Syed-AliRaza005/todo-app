@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report:
-Version: 0.0.0 → 1.0.0
-Changes: Initial constitution creation for Phase-1 (Console Todo App)
-Modified Principles: All (initial creation)
-Added Sections: Phase-1 Requirements, Development Workflow
-Templates Status: ✅ Initial setup complete
-Follow-up TODOs: Future phases will extend this constitution
+Version: 1.0.0 → 2.0.0
+Changes: Added Phase-2 Full-Stack Web App requirements
+Modified Principles: None (Phase-1 principles preserved)
+Added Sections: Phase-2 Requirements, Authentication Logic, Tech Stack for Full-Stack, Data Isolation Rules
+Templates Status: ✅ No changes needed to plan/spec/tasks templates
+Follow-up TODOs: None
 -->
 
 # Todo App Project Constitution
@@ -146,27 +146,281 @@ console-app/
 - [ ] Clear all tasks and verify ID counter resets
 - [ ] Test error cases (invalid ID, missing args)
 
+---
+
+## Phase-2: Full-Stack Web Application
+
+This section governs the transition from CLI to a modern web application with user authentication and multi-user support.
+
+## Phase-2 Core Principles
+
+### VII. Authentication & Security
+**All API endpoints MUST be protected with JWT-based authentication.**
+- Next.js (frontend) issues JWT tokens using Better Auth
+- FastAPI (backend) validates JWT tokens from `Authorization: Bearer <token>` header
+- Shared `BETTER_AUTH_SECRET` between frontend and backend
+- Every request to backend API MUST include valid JWT
+- Invalid or expired tokens MUST return 401 Unauthorized
+
+**Rationale**: Ensures secure multi-user access and prevents unauthorized data access.
+
+### VIII. Data Isolation & Multi-Tenancy
+**Users MUST ONLY access their own data.**
+- Every task MUST be linked to a `user_id` field
+- API endpoints MUST follow pattern: `/api/{user_id}/tasks`
+- Backend MUST validate: `JWT user_id` == `URL param user_id` on every request
+- User A cannot access, view, modify, or delete User B's tasks
+- Cross-user data access MUST return 403 Forbidden
+
+**Rationale**: Enforces strict data ownership and prevents data leaks between users.
+
+### IX. Modern Full-Stack Architecture
+**Application MUST use modern, production-ready technologies.**
+- **Frontend**: Next.js 16+ with App Router, Better Auth, Tailwind CSS
+- **Backend**: Python FastAPI with SQLModel ORM
+- **Database**: Neon Serverless PostgreSQL
+- **API Design**: RESTful endpoints with proper status codes
+- **Error Handling**: Structured error responses with proper HTTP codes
+
+**Rationale**: Provides scalable, maintainable foundation for production application.
+
+### X. User Experience Standards
+**Web UI MUST be modern, responsive, and intuitive.**
+- Tailwind CSS for styling with mobile-first responsive design
+- Dashboard shows tasks with status indicators (Complete/Pending)
+- Tasks display timestamps (created_at, completed_at if applicable)
+- Login/Signup pages using Better Auth
+- Real-time task state updates (add, complete, delete, update)
+- Empty states with friendly messages
+
+**Rationale**: Professional user experience matching modern web standards.
+
+## Phase-2 Technical Requirements
+
+### Technology Stack
+
+#### Frontend
+- **Framework**: Next.js 16+ (App Router architecture)
+- **Authentication**: Better Auth (JWT token management)
+- **Styling**: Tailwind CSS
+- **Language**: TypeScript
+- **HTTP Client**: Native fetch or Axios
+
+#### Backend
+- **Framework**: Python FastAPI
+- **ORM**: SQLModel (built on Pydantic + SQLAlchemy)
+- **Database**: Neon Serverless PostgreSQL
+- **Authentication**: Custom JWT validation middleware
+- **API Documentation**: Auto-generated via FastAPI OpenAPI
+
+#### Shared Infrastructure
+- **Secret Management**: Environment variables for `BETTER_AUTH_SECRET`
+- **Database Migrations**: Alembic (SQLModel integration)
+- **Environment**: Separate `.env` for development/staging/production
+
+### Database Schema
+
+#### Users Table
+```sql
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    name VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+#### Tasks Table
+```sql
+CREATE TABLE tasks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'Pending', -- 'Pending' or 'Completed'
+    created_at TIMESTAMP DEFAULT NOW(),
+    completed_at TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_tasks_user_id ON tasks(user_id);
+CREATE INDEX idx_tasks_status ON tasks(status);
+```
+
+### API Endpoints
+
+#### Authentication (Frontend-managed via Better Auth)
+- `POST /auth/signin` - Login and receive JWT
+- `POST /auth/signup` - Register new user and receive JWT
+- `POST /auth/signout` - Logout (invalidate token)
+
+#### Task Management (Backend FastAPI)
+All endpoints require `Authorization: Bearer <jwt_token>` header and user_id in URL:
+
+- `GET /api/{user_id}/tasks` - List all tasks for user
+  - Query params: `status` (optional filter: 'Pending'|'Completed'|'All')
+  - Response: 200 with array of tasks, 401 unauthorized, 403 forbidden
+
+- `POST /api/{user_id}/tasks` - Create new task
+  - Body: `{ "title": str, "description": str (optional) }`
+  - Response: 201 with created task, 401/403/422 (validation error)
+
+- `PUT /api/{user_id}/tasks/{task_id}` - Update task
+  - Body: `{ "title"?: str, "description"?: str, "status"?: str }`
+  - Response: 200 with updated task, 401/403/404/422
+
+- `DELETE /api/{user_id}/tasks/{task_id}` - Delete task
+  - Response: 204 No Content, 401/403/404
+
+- `PATCH /api/{user_id}/tasks/{task_id}/complete` - Mark task as completed
+  - Response: 200 with updated task, 401/403/404
+
+### Authentication Flow
+
+#### Token Issuance (Frontend)
+1. User signs in/up via Better Auth on Next.js
+2. Better Auth validates credentials against backend (or internal auth store)
+3. Better Auth generates JWT using `BETTER_AUTH_SECRET`
+4. JWT stored in secure cookie or localStorage
+5. JWT sent in `Authorization: Bearer <token>` header for API calls
+
+#### Token Validation (Backend)
+```python
+# FastAPI dependency
+async def verify_jwt(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    try:
+        payload = decode_jwt(token, BETTER_AUTH_SECRET)
+        user_id = payload.get("sub")  # Subject = user_id
+        return user_id
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+```
+
+### Data Isolation Implementation
+
+#### Endpoint Validation Pattern
+```python
+@app.get("/api/{user_id}/tasks")
+async def get_tasks(
+    user_id: UUID,
+    token_user_id: UUID = Depends(verify_jwt)
+):
+    # CRITICAL: Verify token user matches URL user
+    if token_user_id != user_id:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    # Safe to proceed - user can only access their own tasks
+    tasks = await session.exec(
+        select(Task).where(Task.user_id == user_id)
+    )
+    return tasks
+```
+
+### Project Structure
+
+```
+/
+├── frontend/                   # Next.js application
+│   ├── app/
+│   │   ├── (auth)/            # Login/Signup pages
+│   │   │   ├── signin/
+│   │   │   └── signup/
+│   │   ├── dashboard/         # Protected dashboard
+│   │   │   └── page.tsx
+│   │   └── layout.tsx         # Root layout
+│   ├── components/            # Reusable components
+│   │   ├── TaskList.tsx
+│   │   ├── TaskItem.tsx
+│   │   └── AuthGuard.tsx
+│   ├── lib/
+│   │   └── api.ts             # API client with auth headers
+│   └── package.json
+│
+├── backend/                   # FastAPI application
+│   ├── alembic/               # Database migrations
+│   ├── alembic.ini
+│   ├── src/
+│   │   ├── models/
+│   │   │   ├── user.py        # User model (SQLModel)
+│   │   │   └── task.py        # Task model (SQLModel)
+│   │   ├── api/
+│   │   │   └── routes.py      # API endpoints
+│   │   ├── auth/
+│   │   │   └── jwt.py         # JWT validation
+│   │   ├── database.py        # Database connection
+│   │   └── main.py            # FastAPI app entry point
+│   ├── tests/
+│   └── pyproject.toml
+│
+└── .env.example               # Environment variables template
+```
+
+## Phase-2 Development Workflow
+
+### Implementation Sequence
+1. ✅ **Backend Setup**: Initialize FastAPI project with SQLModel
+2. **Database**: Setup Neon PostgreSQL and create schema
+3. **Authentication**: Implement JWT validation middleware in FastAPI
+4. **Backend API**: Implement task endpoints with user isolation
+5. **Frontend Setup**: Initialize Next.js 16+ with App Router
+6. **Frontend Auth**: Setup Better Auth for authentication
+7. **Frontend UI**: Build dashboard with Tailwind CSS
+8. **Integration**: Connect frontend to backend API with auth
+9. **Testing**: E2E testing of complete user flows
+
+### Quality Gates
+- JWT validation works for all protected endpoints
+- User isolation is enforced on every API call
+- Frontend properly stores and sends JWT tokens
+- Dashboard shows tasks for authenticated user only
+- UI is responsive and works on mobile devices
+- Error handling shows user-friendly messages
+
+### Testing Checklist
+#### Backend
+- [ ] JWT validation rejects invalid/expired tokens
+- [ ] Endpoint returns 403 when token user_id != URL user_id
+- [ ] User A cannot access User B's tasks
+- [ ] All CRUD operations work for valid user
+- [ ] Database migrations execute successfully
+
+#### Frontend
+- [ ] Login works and JWT is stored
+- [ ] Dashboard loads only authenticated user's tasks
+- [ ] Task add/edit/delete operations reflect immediately
+- [ ] Logout clears JWT and redirects to signin
+- [ ] Responsive design works on mobile/desktop
+
+#### Integration
+- [ ] Complete user journey: signup → create tasks → complete tasks → logout
+- [ ] Multiple users cannot see each other's tasks
+- [ ] Session timeout handles gracefully
+
 ## Governance
 
 ### Constitution Authority
-This constitution is the authoritative source for Phase-1 development decisions. All implementation choices MUST align with these principles.
+This constitution is the authoritative source for Phase-1 and Phase-2 development decisions. All implementation choices MUST align with these principles.
 
 ### Amendment Process
-- **MAJOR version bump**: Breaking changes to principles (e.g., changing ID stability rules)
-- **MINOR version bump**: Adding new principles or expanding sections (e.g., Phase-2 requirements)
+- **MAJOR version bump**: Breaking changes to principles (e.g., changing authentication mechanism)
+- **MINOR version bump**: Adding new principles or expanding sections (e.g., Phase-3 requirements)
 - **PATCH version bump**: Clarifications, typos, non-semantic fixes
 
 ### Future Phases
 This constitution will be extended (not replaced) when adding:
-- Phase-2: Web interface
-- Phase-3: Multi-user support
-- Phase-4: Cloud sync
+- Phase-3: Real-time collaboration (WebSockets)
+- Phase-4: Advanced features (tags, categories, due dates)
+- Phase-5: Mobile applications (React Native / Flutter)
 
-Each phase will add new sections while preserving Phase-1 principles.
+Each phase will add new sections while preserving Phase-1 and Phase-2 principles.
 
 ### Compliance
 - Every code change MUST comply with these principles
 - The developer MUST verify compliance before committing
 - User prompts that conflict with these principles MUST be clarified
+- Phase-1 and Phase-2 principles are both active and must be maintained
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-31 | **Last Amended**: 2025-12-31
+**Version**: 2.0.0 | **Ratified**: 2025-12-31 | **Last Amended**: 2026-01-01
